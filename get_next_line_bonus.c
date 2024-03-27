@@ -1,80 +1,94 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   get_next_line_bonus.c                              :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: sdi-mari <sdi-mari@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/02/24 12:10:20 by sdi-mari          #+#    #+#             */
-/*   Updated: 2024/03/27 16:01:23 by sdi-mari         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "get_next_line_bonus.h"
 
-static char	*ft_handle_nl(char *str_result)
+char	*ft_line(int fd, char *line)
 {
-	int		i;
-	char	*new_line;
+	char	*buf;
+	ssize_t	b;
 
-	i = 0;
-	while (str_result[i] != '\0' && str_result[i] != '\n')
-		++i;
-	if (str_result[i] == '\0')
-		return (0);
-	new_line = ft_substr(str_result, i + 1, ft_strlen(str_result) - 1);
-	if (*new_line == '\0')
+	buf = malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	if (!buf)
+		return (NULL);
+	b = 1;
+	while (!(ft_strchr(line, '\n')) && b > 0)
 	{
-		free(new_line);
-		new_line = 0;
+		b = read(fd, buf, BUFFER_SIZE);
+		if (b == -1)
+		{
+			free(buf);
+			return (NULL);
+		}
+		buf[b] = '\0';
+		line = ft_strjoin(line, buf);
 	}
-	while (str_result[++i])
-		str_result[i] = '\0';
-	return (new_line);
+	free(buf);
+	return (line);
 }
 
-static char	*ft_str_read(int fd, char *str_read, char *str_buff)
+char	*ft_new_line(char *line)
 {
-	int		nbytes;
-	char	*temp;
+	char	*new;
+	int		i;
 
-	nbytes = 1;
-	while (nbytes != '\0')
+	i = 0;
+	if (!line[i])
+		return (NULL);
+	while (line[i] && line[i] != '\n')
+		i++;
+	new = (char *)malloc(sizeof(char) * (i + 2));
+	if (!new)
+		return (NULL);
+	i = 0;
+	while (line[i] && line[i] != '\n')
 	{
-		nbytes = read(fd, str_read, BUFFER_SIZE);
-		if (nbytes == -1);
-			return (0);
-		else if (nbytes > 0)
-		{
-			str_read[nbytes] = '\0';
-			if (!str_buf)
-				str_buf = ft_strdup("")
-			temp = str_buf;
-			str_buf = ft_strjoin(temp, str_read);
-			free(temp);
-		}
-		if (nbytes == 0 || ft_strchr(str_read, '\n'))
-			nbytes = '\0';
+		new[i] = line[i];
+		i++;
 	}
-	return (str_buff);
+	if (line[i] == '\n')
+	{
+		new[i] = '\n';
+		i++;
+	}
+	new[i] = 0;
+	return (new);
+}
+
+char	*new_line(char *line)
+{
+	int		i;
+	int		j;
+	char	*str;
+
+	i = 0;
+	while (line[i] && line[i] != '\n')
+		i++;
+	if (!line[i])
+	{
+		free(line);
+		return (NULL);
+	}
+	str = (char *)malloc(sizeof(char) * (ft_strlen(line) - i + 1));
+	if (!str)
+		return (NULL);
+	i++;
+	j = 0;
+	while (line[i])
+		str[j++] = line[i++];
+	str[j] = '\0';
+	free(line);
+	return (str);
 }
 
 char	*get_next_line(int fd)
 {
-	static char	*str_buff[4096];
-	char		*str_read;
-	char		*str_result;
+	static char	*line[OPEN_MAX];
+	char		*out;
 
-	if (fd < 0 || fd >= 4096 || BUFFER_SIZE <= 0 || fd == 1 || fd == 2)
-		return (0);
-	str_read = (char *)malloc(sizeof(char) * (BUFFER_SIZE + 1));
-	if (!str_read)
-		return (0);
-	str_result = ft_str_read(fd, str_read, str_buff[fd]);
-	fd(str_read);
-	str_read = 0;
-	if (!str_result)
-		return (0);
-	str_buff[fd] = ft_handle_nl(str_result);
-	return (str_result);
+	if (fd < 0 || BUFFER_SIZE <= 0)
+		return (NULL);
+	line[fd] = ft_line(fd, line[fd]);
+	if (!line[fd])
+		return (NULL);
+	out = ft_new_line(line[fd]);
+	line[fd] = new_line(line[fd]);
+	return (out);
 }
